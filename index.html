@@ -44,11 +44,12 @@
 
 <p>Create 3 VMs running Ubuntu server: VM1, VM2, VM3. VM1 is going to be our Gateway, NFS server, and NIS as well. It will be visible to the host OS. Because VM1 is our Gateway it needs two network adapters one that is NAT and the other that is just internal. </p>
 
-<p>Make sure you have a ssh server running on them. If you didn't do this on install, then run:
-<code>
-sudo apt-get install openssh-server
-</code>
-Because we've gone with NAT, we'll have to setup port forwarding under networking and then ssh to localhost using the port you specified. For more information: <a href="http://stackoverflow.com/questions/5906441/how-to-ssh-to-a-virtualbox-guest-externally-through-a-host">http://stackoverflow.com/questions/5906441/how-to-ssh-to-a-virtualbox-guest-externally-through-a-host</a></p>
+<p>Make sure you have a ssh server running on them. If you didn't do this on install, then run:</p>
+
+<pre>sudo apt-get install openssh-server
+</pre>
+
+<p>Because we've gone with NAT, we'll have to setup port forwarding under networking and then ssh to localhost using the port you specified. For more information: <a href="http://stackoverflow.com/questions/5906441/how-to-ssh-to-a-virtualbox-guest-externally-through-a-host">http://stackoverflow.com/questions/5906441/how-to-ssh-to-a-virtualbox-guest-externally-through-a-host</a></p>
 
 <p>Resources:</p>
 
@@ -60,18 +61,18 @@ Because we've gone with NAT, we'll have to setup port forwarding under networkin
 <h1>
 <a id="networking" class="anchor" href="#networking" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Networking</h1>
 
-<p>Here are the last lines in my interfaces file located at /etc/networking/interfaces:
-<code>
-auto enp0s3
-iface enp0s3 inet dhcp</code></p>
+<p>Here are the last lines in my interfaces file located at /etc/networking/interfaces:</p>
 
-<p>auto enp0s8
+<pre>auto enp0s3
+iface enp0s3 inet dhcp
+
+auto enp0s8
 iface enp0s8 inet static
         address 192.168.1.1
         broadcast 192.168.1.255
         netmask 255.255.255.0
         network 192.168.137.0
-</p>
+</pre>
 
 <h1>
 <a id="nis" class="anchor" href="#nis" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>NIS</h1>
