@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>My Virtualbox Setup by Anderson-Lab</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-dark.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/main.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+
+      <header>
+        <h1>My Virtualbox Setup</h1>
+        <p></p>
+      </header>
+
+      <div id="banner">
+        <span id="logo"></span>
+
+        <a href="https://github.com/Anderson-Lab/my-virtualbox-setup" class="button fork"><strong>View On GitHub</strong></a>
+        <div class="downloads">
+          <span>Downloads:</span>
+          <ul>
+            <li><a href="https://github.com/Anderson-Lab/my-virtualbox-setup/zipball/master" class="button">ZIP</a></li>
+            <li><a href="https://github.com/Anderson-Lab/my-virtualbox-setup/tarball/master" class="button">TAR</a></li>
+          </ul>
+        </div>
+      </div><!-- end banner -->
+
+    <div class="wrapper">
+      <nav>
+        <ul></ul>
+      </nav>
+      <section>
+        <h1>
+<a id="virtualbox" class="anchor" href="#virtualbox" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>VirtualBox</h1>
+
+<p>Create 3 VMs running Ubuntu server: VM1, VM2, VM3. VM1 is going to be our Gateway, NFS server, and NIS as well. It will be visible to the host OS. Because VM1 is our Gateway it needs two network adapters one that is NAT and the other that is just internal. </p>
+
+<p>Make sure you have a ssh server running on them. If you didn't do this on install, then run:
+<code>
+sudo apt-get install openssh-server
+</code>
+Because we've gone with NAT, we'll have to setup port forwarding under networking and then ssh to localhost using the port you specified. For more information: <a href="http://stackoverflow.com/questions/5906441/how-to-ssh-to-a-virtualbox-guest-externally-through-a-host">http://stackoverflow.com/questions/5906441/how-to-ssh-to-a-virtualbox-guest-externally-through-a-host</a></p>
+
+<p>Resources:</p>
+
+<ul>
+<li><a href="https://www.virtualbox.org/">https://www.virtualbox.org/</a></li>
+<li><a href="http://www.ubuntu.com">www.ubuntu.com</a></li>
+</ul>
+
+<h1>
+<a id="networking" class="anchor" href="#networking" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Networking</h1>
+
+<p>Here are the last lines in my interfaces file located at /etc/networking/interfaces:
+<code>
+auto enp0s3
+iface enp0s3 inet dhcp</code></p>
+
+<p>auto enp0s8
+iface enp0s8 inet static
+        address 192.168.1.1
+        broadcast 192.168.1.255
+        netmask 255.255.255.0
+        network 192.168.137.0
+</p>
+
+<h1>
+<a id="nis" class="anchor" href="#nis" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>NIS</h1>
+
+<p>sets up shared login between all virtual machines</p>
+
+<p><a href="https://help.ubuntu.com/community/SettingUpNISHowTo">https://help.ubuntu.com/community/SettingUpNISHowTo</a></p>
+
+<h1>
+<a id="nfs" class="anchor" href="#nfs" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>NFS</h1>
+      </section>
+      <footer>
+        <p>Project maintained by <a href="https://github.com/Anderson-Lab">Anderson-Lab</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
