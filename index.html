@@ -61,7 +61,7 @@
 <h1>
 <a id="networking" class="anchor" href="#networking" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Networking</h1>
 
-<p>Here are the last lines in my interfaces file located at /etc/networking/interfaces:</p>
+<p>Here are the last lines in my interfaces file located at /etc/networking/interfaces on vm1:</p>
 
 <pre>auto enp0s3
 iface enp0s3 inet dhcp
@@ -74,15 +74,209 @@ iface enp0s8 inet static
         network 192.168.137.0
 </pre>
 
+<p>Here are the last lines in my interfaces file located at /etc/networking/interfaces on vm2:</p>
+
+<pre>
+auto enp0s8
+iface enp0s8 inet static
+        address 192.168.1.100
+        broadcast 192.168.1.255
+        netmask 255.255.255.0
+        network 192.168.137.0
+        gateway 192.168.1.1
+        dns-nameservers 8.8.8.8
+</pre>
+
+<p>I also removed apparmor from vm1 because this is a test setup, and I don't want security getting in the way of things at the moment: <a href="http://www.techytalk.info/disable-and-remove-apparmor-on-ubuntu-based-linux-distributions/comment-page-1/">http://www.techytalk.info/disable-and-remove-apparmor-on-ubuntu-based-linux-distributions/comment-page-1/</a>.</p>
+
 <h1>
 <a id="nis" class="anchor" href="#nis" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>NIS</h1>
 
-<p>sets up shared login between all virtual machines</p>
+<p>Set up shared login between all virtual machines. I'm going to use vm1 as the nis server. All others are clients.</p>
 
 <p><a href="https://help.ubuntu.com/community/SettingUpNISHowTo">https://help.ubuntu.com/community/SettingUpNISHowTo</a></p>
 
+<p>Here are some details that I used while following the tutorial. Specifically, I had to modify a few things and here are my exact files:</p>
+
+<p>I called my domain <b>mydomain</b>. And I ran through the install provided by the link, which is what you should do first. But then I had to make some changes to the files.</p>
+
+<h3>
+<a id="vm1" class="anchor" href="#vm1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>vm1</h3>
+
+<h4>
+<a id="etchosts" class="anchor" href="#etchosts" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>/etc/hosts</h4>
+
+<pre>127.0.0.1       localhost
+192.168.1.100   vm2
+192.168.1.101   vm3
+192.168.1.1     vm1
+
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+</pre>
+
+<h4>
+<a id="rpcbind" class="anchor" href="#rpcbind" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>rpcbind</h4>
+
+<p>rpcbind didn't start on boot for me, which seems like a known bug. To fix, run: <code>sudo systemctl add-wants multi-user.target rpcbind.service</code>. Then reboot.</p>
+
+<h4>
+<a id="hostsallow" class="anchor" href="#hostsallow" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>hosts.allow</h4>
+
+<pre>rpcbind ypserv ypbind : 192.168.1.0
+</pre>
+
+<h4>
+<a id="ypservsecurenets" class="anchor" href="#ypservsecurenets" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ypserv.securenets</h4>
+
+<pre># Always allow access for localhost
+255.0.0.0       127.0.0.0
+
+# This line gives access to everybody. PLEASE ADJUST!
+255.255.255.0 192.168.1.0
+</pre>
+
+<h4>
+<a id="ypconf" class="anchor" href="#ypconf" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>yp.conf</h4>
+
+<pre>domain mydomain server vm1
+</pre>
+
+<h3>
+<a id="vm2" class="anchor" href="#vm2" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>vm2</h3>
+
+<h4>
+<a id="ypconf-1" class="anchor" href="#ypconf-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>yp.conf</h4>
+
+<pre>ypserver vm1
+</pre>
+
+<h4>
+<a id="etchosts-1" class="anchor" href="#etchosts-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>/etc/hosts</h4>
+
+<pre>127.0.0.1       localhost
+192.168.1.100   vm2
+192.168.1.1     vm1
+
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+</pre>
+
+<h3>
+<a id="what-does-this-give-us" class="anchor" href="#what-does-this-give-us" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What does this give us?</h3>
+
+<p>We can now have shared passwords/usernames/groups! For example, I can now create a hduser and share it with all systems:</p>
+
+<pre>birg@vm1:~$ sudo adduser hduser
+Adding user `hduser' ...
+Adding new group `hduser' (1001) ...
+Adding new user `hduser' (1001) with group `hduser' ...
+Creating home directory `/home/hduser' ...
+Copying files from `/etc/skel' ...
+Enter new UNIX password:
+Retype new UNIX password:
+passwd: password updated successfully
+Changing the user information for hduser
+Enter the new value, or press ENTER for the default
+        Full Name []: Hadoop User
+        Room Number []:
+        Work Phone []:
+        Home Phone []:
+        Other []:
+Is the information correct? [Y/n] Y
+birg@vm1:~$ sudo make -C /var/yp
+make: Entering directory '/var/yp'
+make[1]: Entering directory '/var/yp/mydomain'
+Updating passwd.byname...
+Updating passwd.byuid...
+Updating group.byname...
+Updating group.bygid...
+Updating netid.byname...
+Updating shadow.byname...
+make[1]: Leaving directory '/var/yp/mydomain'
+make: Leaving directory '/var/yp'
+</pre>
+
+<p>I also changed the following line in /etc/nsswitch.conf on vm2 (or on whatever you called your client):</p>
+
+<pre>hosts:          nis files dns
+</pre>
+
+<h1>
+<a id="gateway" class="anchor" href="#gateway" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Gateway</h1>
+
+<p>I'm going to setup vm1 as a gateway for my other vms. I following the iptables section of <a href="https://help.ubuntu.com/community/Internet/ConnectionSharing">https://help.ubuntu.com/community/Internet/ConnectionSharing</a>.</p>
+
+<p>On vm1, I ran:</p>
+
+<pre>sudo iptables -A FORWARD -o enp0s3 -i enp0s8 -s 192.168.1.0/24 -m conntrack --ctstate NEW -j ACCEPT
+sudo iptables -A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+sudo iptables -t nat -F POSTROUTING
+sudo iptables -t nat -A POSTROUTING -o enp0s3 -j MASQUERADE
+</pre>
+
+<p>Then:</p>
+
+<pre>
+sudo iptables-save | sudo tee /etc/iptables.sav
+</pre>
+
+<p>Then I added the following to /etc/rc.local:</p>
+
+<pre>
+iptables-restore &lt; /etc/iptables.sav
+</pre>
+
+<p>I think followed the rest of the ip configuration from the tutorial.</p>
+
 <h1>
 <a id="nfs" class="anchor" href="#nfs" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>NFS</h1>
+
+<p>Now we would really like a shared filesystem. I'm going to share the home directory using NFS using this tutorial as a guide:</p>
+
+<p><a href="https://help.ubuntu.com/community/SettingUpNFSHowTo">https://help.ubuntu.com/community/SettingUpNFSHowTo</a></p>
+
+<p>My commands on vm1:</p>
+
+<pre>apt-get install nfs-kernel-server
+</pre>
+
+<p>My /etc/exports</p>
+
+<pre>/home 192.168.1.0/24(rw,sync,no_root_squash,no_subtree_check)
+</pre>
+
+<p>Then I did the following:</p>
+
+<pre>birg@vm1:~$ sudo exportfs -a
+birg@vm1:~$ sudo exportfs
+/home           192.168.1.0/24
+</pre>
+
+<p>On the client vm (vm2), I then did:</p>
+
+<pre>sudo apt-get update
+sudo apt-get install nfs-common
+</pre>
+
+<p>Then in /etc/fstab I added:</p>
+
+<pre>vm1:/home   /home nfs    auto  0  0
+</pre>
+
+<p>Then at the command line, I did:</p>
+
+<pre>sudo mount /home
+</pre>
+
+<h1>
+<a id="ssh-keys" class="anchor" href="#ssh-keys" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>SSH keys</h1>
+
+<p>I followed: <a href="https://www.digitalocean.com/community/tutorials/how-to-set-up-ssh-keys--2">https://www.digitalocean.com/community/tutorials/how-to-set-up-ssh-keys--2</a></p>
       </section>
       <footer>
         <p>Project maintained by <a href="https://github.com/Anderson-Lab">Anderson-Lab</a></p>
